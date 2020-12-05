@@ -1,0 +1,25 @@
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+.
+. Demo: Create PODS On-Promise |  Monoem YOUNEB
+.
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+
+# 1. Create first pod
+
+# Create file : web.yml
+mkdir -p /opt/k8s/labPod
+cd /opt/k8s/labPod
+vi web.yml
+
+=>
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.19.5
+
