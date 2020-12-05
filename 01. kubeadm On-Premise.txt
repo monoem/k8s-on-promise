@@ -151,7 +151,5 @@ kubeadm join 192.168.1.40:6443 --token y0hteu.mtjj5ghue4d4755w \
 # Display nodes status (master)
 kubectl get nodes
 
-*---------------------------------------------------------------------------------------------------------------------------------------------*
-# 7. Deploying sample application
 
 
