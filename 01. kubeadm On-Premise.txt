@@ -1,0 +1,157 @@
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+.
+. Demo: Installing Kubernetes using "Kubeadm" On-Promise |  Monoem YOUNEB
+.
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+
+# 1. Create 3 VMs - master(1) and worker(2) nodes
+
+Node Reqs (varies depending on usage)
+-------------------------------------
+Master: 2 vCPUs - 2GB Ram  
+Worker: 1 vCPUs - 2GB RAM
+OS:     CentOS/RHEL 7
+
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+
+# 2. PRE-Reqs: Update system | Install net-tools | SET hosts| ensure ports on  Firewall | Disable - Swap | SELinux
+
+# Note: Execute on all nodes (master & worker)
+
+
+# Update system
+yum update -y 
+
+# Install net-tools
+yum install net-tools
+
+# Set hosts
+vi /etc/hosts
+192.168.1.40 master
+192.168.1.41 worker1
+192.168.1.42 worker2
+reboot
+
+# Ensure ports on  Firewall
+
+a. Master
+
+  firewall-cmd --permanent --add-port={6443,2379,2380,10250,10251,10252}/tcp
+  firewall-cmd --permanent --add-port={179,5473,443}/tcp
+  firewall-cmd --reload
+
+ b. worker
+
+   firewall-cmd --permanent --add-port={10250,30000-32767}/tcp
+   firewall-cmd --permanent --add-port={179,5473,443}/tcp
+   firewall-cmd --reload
+
+# Disable SELinux 
+setenforce 0
+sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+reboot
+
+# Check whether SELinux is in permissive mode:
+getenforce
+-> Permissive
+
+# Disable SWAP
+swapoff -a
+sed -i.bak -r 's/(.+ swap .+)/#\1/' /etc/fstab
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+# 3. Download & Install - Docker | Kubelet | Kubeadm | Kubectl 
+
+# Note: Execute on all nodes (master & worker)
+
+# Kubernetes Repository 
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kube*
+EOF
+
+# Installing Docker | Kubelet | Kubeadm | Kubectl 
+yum install -y docker kubeadm kubelet kubectl --disableexcludes=kubernetes
+
+
+# Start and enable docker and kubectl
+systemctl enable docker && systemctl start docker
+systemctl enable kubelet && systemctl start kubelet
+
+
+# Bridge network For CentOS and RHEL 
+cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+# Restart the systemd daemon and the kubelet service with the commands
+systemctl daemon-reload
+systemctl restart kubelet
+
+# cat config
+more .kube/config
+
+
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+# 4. Configure Kubernetes "master" node
+
+# Note: Execute on master
+
+# Initializing master node (master)
+kubeadm init --pod-network-cidr=192.168.0.0/16
+
+	*************************************************************************************************************************************
+=>	*																    *
+	*	kubeadm join 192.168.1.40:6443 --token y0hteu.mtjj5ghue4d4755w \
+    	*	--discovery-token-ca-cert-hash sha256:e17bfb7e13a6d57a56e471cf1bb46f333064925b3f0f1897da067fb21807c521
+	*																    *
+	*************************************************************************************************************************************
+
+# we can create user lambda
+useradd kubeadm
+passwd kubeadm
+-> Add user to visudo
+kubeadm		ALL=(ALL)	ALL
+-> connect kubeadm : ssh kubeadm@ipaddress	
+ssh kubeadm@192.168.1.40	 
+
+# run kubectl as "regular" user. Then, execute below. (master)
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# Installing "Calico" network-plug-in for cluster network (On Master Node)
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+kubectl get pods --all-namespaces
+
+# If I fougot the token
+sudo kubeadm join --token <token> <ip>:6443
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+# 5. Join "worker" nodes to the cluster
+# Note: Execute on workers
+
+kubeadm join 192.168.1.40:6443 --token y0hteu.mtjj5ghue4d4755w \
+--discovery-token-ca-cert-hash sha256:e17bfb7e13a6d57a56e471cf1bb46f333064925b3f0f1897da067fb21807c521
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+# 6. Testing
+
+# Display nodes status (master)
+kubectl get nodes
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+# 7. Deploying sample application
+
+
