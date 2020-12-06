@@ -6,4 +6,120 @@
 
 *---------------------------------------------------------------------------------------------------------------------------------------------*
 
-# 1. https://labs.play-with-k8s.com/
+# 1. https://raw.githubusercontent.com/monoem/k8s-on-promise/master/yml/nginx-deployment.yaml
+
+# nginx-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+
+2. Create and display Pods
+
+# Create and display PODs
+kubectl create -f nginx-pod.yaml
+kubectl get pod
+kubectl get pod -o wide
+kubectl get pod -o yaml |  more
+kubectl describe pod <pod_name>
+
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+
+3. Test & Delete : Create a simple html file
+
+# Get Pods
+
+kubectl get pod
+
+	*********************************************************************************
+	*	NAME                                READY   STATUS    RESTARTS   AGE	*
+	*	nginx-deployment-66b6c48dd5-g5mjm   1/1     Running   0          19m	*
+=>	*	nginx-deployment-66b6c48dd5-m46qg   1/1     Running   0          14m	*
+	*	nginx-deployment-66b6c48dd5-xtk7r   1/1     Running   0          17m	*
+	*********************************************************************************
+
+
+
+# To get inside the pod (to 3 pods)
+kubectl exec -it nginx-deployment-66b6c48dd5-g5mjm -- /bin/sh
+
+=> Inside the container type
+*****************************************************************************************
+hostname
+
+# Create test HTML page
+cat <<EOF > /usr/share/nginx/html/test.html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Testing..</title>
+</head>
+<body>
+<h1 style="color:rgb(90,70,250);">Hello, Kubernetes...!</h1>
+<h2>Congratulations, you passed :-) </h2>
+</body>
+</html>
+EOF
+exit
+*****************************************************************************************
+
+# Expose PODS using NodePort service
+kubectl expose pod nginx-deployment-66b6c48dd5-g5mjm --type=NodePort --port=80
+
+# Display Service and find NodePort
+kubectl describe svc nginx-deployment-66b6c48dd5-g5mjm
+
+=> result : copy the dynamic port 31868
+*****************************************************************************************
+service/nginx-deployment-66b6c48dd5-g5mjm exposed
+[root@master ~]# kubectl describe svc nginx-deployment-66b6c48dd5-g5mjm
+Name:                     nginx-deployment-66b6c48dd5-g5mjm
+Namespace:                default
+Labels:                   app=nginx
+                          pod-template-hash=66b6c48dd5
+Annotations:              <none>
+Selector:                 app=nginx,pod-template-hash=66b6c48dd5
+Type:                     NodePort
+IP:                       10.104.222.82
+Port:                     <unset>  80/TCP
+TargetPort:               80/TCP
+NodePort:                 <unset>  31868/TCP
+Endpoints:                192.168.182.4:80,192.168.189.67:80,192.168.235.131:80
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:                   <none>
+[root@master ~]#
+*****************************************************************************************
+
+# Open Web-browser and access webapge using 
+http://nodeip:nodeport/test.html
+
+in my case : 
+http://192.168.1.42:31868/test.html
+
+# Delete pod & svc
+kubectl delete svc nginx-deployment-66b6c48dd5-g5mjm
+kubectl delete pod nginx-deployment-66b6c48dd5-g5mjm
+
+kubectl delete pods nginx-deployment-66b6c48dd5-g5mjm --grace-period=0 --force
