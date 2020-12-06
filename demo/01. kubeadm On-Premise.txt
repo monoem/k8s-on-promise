@@ -166,4 +166,8 @@ kubectl apply -f https://raw.githubusercontent.com/monoem/k8s-on-promise/master/
 kubectl get po -o wide
 
 
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+# 8. Delete pod
+kubectl delete pod nginx-deployment
+
 
