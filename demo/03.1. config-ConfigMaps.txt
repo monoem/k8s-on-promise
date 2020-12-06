@@ -1,0 +1,90 @@
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+.
+. PART 3 Demo: Files ConfigMaps On-Promise |  Monoem YOUNEB
+.
+
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+
+# 1. Definition : https://devopssec.fr/article/variables-environnement-kubernetes
+
+Lorsque vous construisez votre pile d'application pour fonctionner sur Kubernetes, généralement la configuration de base du pod est généralement 
+effectuée en définissant différentes variables d'environnement. 
+Si par exemple si vous souhaitez créer un pod utilisant l'image wordpress, vous aurez alors besoin de surcharger certaines variables d'environnement,
+tels que l'adresse, l'utilisateur et le mot de passe de la base de données. Par ailleurs vous souhaiteriez peut-être aussi protéger le mot de passe de 
+la base de données en évitant de l'afficher en clair. De plus, parfois, vous voudriez aussi définir tout un ensemble de variables d'environnement pouvant 
+être partagées par plusieurs conteneurs de votre pods.
+
+=> Les types de variables d'environnement
+* a. Le mode basique
+
+Lorsque vous créez un pod, vous pouvez définir des variables d'environnement pour les conteneurs qui s'exécutent dans le pod en incluant le champ env 
+dans le fichier de configuration du pod.
+
+* b. ConfigMap
+
+Dans le cas où vous utilisez les mêmes variables d'environnement dans plusieurs pods, il est plus intéressant de songer à utiliser l'objet ConfigMap.
+Comment ça marche ? 
+Premièrement vous définissez vos clés et vos valeurs votre objet ConfigMap et deuxièmement vous les réutilisez dans le champ env de vos Pods. 
+Dès lors, quand vous souhaiteriez modifier la valeur votre variable d'environnement, vous n'aurez plus qu'à modifier sa valeur que dans votre ConfigMap. 
+À l'inverse du mode basique, où vous auriez rectifié la valeur de votre variable d'environnement pour chaque pod.
+
+Pour créer une ConfigMap, soit vous utilisez soit la commande kubectl soit un fichier yaml.
+
+* b.1 Depuis la commande kubectl
+
+Voici à quoi ressemble le prototype de la commande de création de ConfigMap avec l'outil kubectl :
+
+*************************************************************************
+* kubectl create configmap <confiMap-name> --from-literal=<key>=<value> *
+*************************************************************************
+
+Dans cet exemple nous allons créer une ConfigMap nommée maconfigmap avec comme clé db-name et comme valeur test, soit :
+
+********************************************************************
+* kubectl create configmap maconfigmap --from-literal=db-name=test *
+********************************************************************
+
+Voici la commande qui permet de lister les ConfigMaps disponibles dans votre cluster :
+
+**************************
+* kubectl get configmaps *
+**************************
+
+Résultat :
+******************************
+* NAME          DATA   AGE   *
+* maconfigmap   1      2m26s *
+******************************
+
+* b.2 Utilisation d'un fichier YAML
+L'autre manière de créer votre configMap, est d'utiliser un fichier YAML. Dans cet exemple, nous créerons une ConfigMap avec comme clé ma-cle et comme valeur ma-valeur.
+
+**********************
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+data:
+  ma-cle: ma-valeur
+***********************
+
+Créez ensuite votre objet ConfigMap avec la commande suivante :
+*******************************************************************************************
+*kubectl create -f configmapc.yaml
+*******************************************************************************************
+
+Enfin, vérifions si notre nouveau ConfigMap est bien disponible dans notre cluster :
+*******************************************************************************************
+kubectl get configmaps
+Résultat :
+
+NAME           DATA   AGE
+maconfigmap    1      20m
+maconfigmap2   1      13m
+test-config    1      3m26s
+********************************************************************************************
+
+
+
+
