@@ -26,13 +26,14 @@ OS:     CentOS/RHEL 7
 yum update -y 
 
 # Install net-tools
-yum install net-tools
+yum install net-tools -y
 
 # Set hosts
 vi /etc/hosts
 192.168.1.40 master
 192.168.1.41 worker1
 192.168.1.42 worker2
+192.168.1.43 worker3
 reboot
 
 # Ensure ports on  Firewall
@@ -111,18 +112,22 @@ more .kube/config
 # Initializing master node (master)
 kubeadm init --pod-network-cidr=192.168.0.0/16
 
+=> save this token to join workers
+
 	*************************************************************************************************************************************
 =>	*																    *
-	*	kubeadm join 192.168.1.40:6443 --token y0hteu.mtjj5ghue4d4755w \
-    	*	--discovery-token-ca-cert-hash sha256:e17bfb7e13a6d57a56e471cf1bb46f333064925b3f0f1897da067fb21807c521
+	*	kubeadm join 192.168.1.40:6443 --token p0idzo.x73okkspvwwfb45l \
+    	*	--discovery-token-ca-cert-hash sha256:7953fddf50f648b1197137c7e82dda8d9b40d12f8be026bd530d56280384e38c
 	*																    *
 	*************************************************************************************************************************************
 
 # we can create user lambda
 useradd kubeadm
 passwd kubeadm
+
 -> Add user to visudo
 kubeadm		ALL=(ALL)	ALL
+
 -> connect kubeadm : ssh kubeadm@ipaddress	
 ssh kubeadm@192.168.1.40	 
 
@@ -131,9 +136,11 @@ mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
+chown -R kubeadm:kubeadm /home/kubeadm/.kube
+
 # Installing "Calico" network-plug-in for cluster network (On Master Node)
-kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
-kubectl get pods --all-namespaces
+sudo kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+sudo kubectl get pods --all-namespaces
 
 # If I fougot the token
 sudo kubeadm join --token <token> <ip>:6443
@@ -142,8 +149,8 @@ sudo kubeadm join --token <token> <ip>:6443
 # 5. Join "worker" nodes to the cluster
 # Note: Execute on workers
 
-kubeadm join 192.168.1.40:6443 --token y0hteu.mtjj5ghue4d4755w \
---discovery-token-ca-cert-hash sha256:e17bfb7e13a6d57a56e471cf1bb46f333064925b3f0f1897da067fb21807c521
+kubeadm join 192.168.1.40:6443 --token p0idzo.x73okkspvwwfb45l \
+--discovery-token-ca-cert-hash sha256:7953fddf50f648b1197137c7e82dda8d9b40d12f8be026bd530d56280384e38c
 
 *---------------------------------------------------------------------------------------------------------------------------------------------*
 # 6. Testing
