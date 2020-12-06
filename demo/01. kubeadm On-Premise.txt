@@ -158,5 +158,12 @@ kubeadm join 192.168.1.40:6443 --token p0idzo.x73okkspvwwfb45l \
 # Display nodes status (master)
 kubectl get nodes
 
+*---------------------------------------------------------------------------------------------------------------------------------------------*
+# 7. Deploying simple application
+
+kubectl apply -f https://raw.githubusercontent.com/monoem/k8s-on-promise/master/yml/nginx-deployment.yaml
+
+kubectl get po -o wide
+
 
 
