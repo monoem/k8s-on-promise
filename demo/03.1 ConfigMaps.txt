@@ -6,25 +6,24 @@
 
 *---------------------------------------------------------------------------------------------------------------------------------------------*
 
-Overview:
----------
-1. Creating Configmap from "multiple files" & Consuming it inside Pod from "volumes" 
+# Prequis
 
-   1a. Create Configmap "nginx-configmap-vol" from "multiple files"
-   1b. Consume "nginx-configmap-vol" configmap inside Pod from "volumes" 
-   1c. Create | Display | Validate
+# Deleting all pods in replicat (scale replicatset to Zero)
 
-2. Creating Configmap from "literal values" & Consuming it inside Pod from "environment variables" 
+kubectl scale deploy my-awesome-deployment --replicas=0
 
-   2a. Create configmap “redis-configmap-env” from "literal values"
-   2b. Consume “redis-configmap-env” configmap inside pod from “Environment Variables” inside pod
-   2c. Create | Display | Validate
+kubectl scale deploy nginx-deployment --replicas=0
 
-3. Cleanup
+ kubecetl get pods
 
-   3a. Delete configmaps
-   3b. Delete pods
-   3c. Validate
+=> No resources found in default namespace.
+   -----------------------------------------
+
+# Chech if configmaps exist
+kubectl get configmaps
+=> No resources found in default namespace.
+   -----------------------------------------
+
 
 *************************************************************************************************************************************************
 
@@ -40,6 +39,14 @@ kubectl create configmap nginx-configmap-vol --from-file=file-1.txt --from-file=
 # rm -f file-1 file-2
 
 kubectl get configmaps
+
+		*********************************************************
+=> result :	* 	NAME                  DATA   AGE		*
+		*		nginx-configmap-vol   2      4m		*
+		*********************************************************
+
+kubectl get configmaps nginx-configmap-vol -o yaml
+
 kubectl describe configmaps nginx-configmap-vol
 
 ==========================================================
